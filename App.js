@@ -66,9 +66,17 @@ export default function App() {
       json[0].timeTableRows.filter((row) => {
         if (row.liveEstimateTime > currentTimeUTC && row.commercialStop === true) {
           const timeString = new Date(row.liveEstimateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          setTrainStops((trainStops) => [...trainStops, [ row.stationShortCode, row.type, timeString ]]);
+          if(trainStops.some(stop => stop.name === row.stationShortCode)) {
+            const index = trainStops.findIndex(stop => stop.name === row.stationShortCode);
+            trainStops[index][row.type] = timeString;
+            setTrainStops([...trainStops]);
+            console.log(index);
+          } else {
+          setTrainStops((trainStops) => [...trainStops, { name: row.stationShortCode, [row.type]: timeString } ]);
+          }
         }
       });
+ 
       console.log(trainStops);
     } catch (error) {
       console.error(error);
@@ -111,10 +119,10 @@ return (
         trainStops.map((stop, index) => {
           return (
             <BlurView intensity={50} tint="dark" className="flex items-center my-3 border-b-2 border-b-green-600" key={index}>
-              <Text className="text-white text-2xl basis-2/5 mb-2">{stopCodes[stop[0]]}</Text>
+              <Text className="text-white text-2xl basis-2/5 mb-2">{stopCodes[stop.name]}</Text>
               <View className="flex flex-row">
-                <Text className="text-white text-xl flex">{stop[2]}</Text>
-                <Text className="text-white text-xl basis-2/5 text-right">{stop[1]}</Text>
+                <Text className="text-white text-xl flex">{stop.ARRIVAL}</Text>
+                <Text className="text-white text-xl basis-2/5 text-right">{stop.DEPARTURE}</Text>
               </View>
             </BlurView>
           )
