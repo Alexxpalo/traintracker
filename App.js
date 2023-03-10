@@ -1,11 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ImageBackground, Text, View, TextInput, TouchableOpacity, ScrollView, Image, Animated, Dimensions } from 'react-native';
+import { Alert, Text, View, TextInput, TouchableOpacity, ScrollView, Image, Animated, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 
 export default function App() {
-  const [fetchedData, setFetchedData] = useState([]);
   const [trainid, setTrainid] = useState('');
-  const [filteredData, setFilteredData] = useState([]);
   const [trainStops, setTrainStops] = useState([]);
   const [stopCodes, setStopCodes] = useState({});
   const translation = useRef(new Animated.Value(0)).current;
@@ -54,17 +52,16 @@ export default function App() {
     try {
       const response = await fetch(`https://rata.digitraffic.fi/api/v1/trains/latest/${trainid}`);
       const json = await response.json();
-      setFetchedData(json[0]);
-      const filteredData = json[0].timeTableRows.filter((row) => {
-        if (row.liveEstimateTime > currentTimeUTC && row.trainStopping === true) {
+      json[0].timeTableRows.filter((row) => {
+        if (row.liveEstimateTime > currentTimeUTC && row.commercialStop === true) {
           const timeString = new Date(row.liveEstimateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           setTrainStops((trainStops) => [...trainStops, [row.stationShortCode, row.type, timeString]]);
         }
-        return row.liveEstimateTime && row.liveEstimateTime > currentTimeUTC;
       });
-      setFilteredData(filteredData);
+      console.log(trainStops);
     } catch (error) {
       console.error(error);
+      Alert.alert("Error", "Cannot find train data");
     }
   };
 
