@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { ImageBackground, Text, View, TextInput, TouchableOpacity, ScrollView, Image, Animated, Dimensions } from 'react-native';
+import { BlurView } from 'expo-blur';
 
 export default function App() {
   const [fetchedData, setFetchedData] = useState([]);
@@ -73,12 +74,15 @@ return (
     <Image className="absolute z-0 w-full h-full"
       source={require('./assets/background.png')}
     />
-    <View className="flex-1 items-center justify-center">
+    <View className="flex-1 justify-center">
+      <BlurView tint="dark" intensity={75} className="border-y-4 border-green-600 w-full flex items-center py-6">
       <Text className="text-white text-xl">Enter train number</Text>
       <TextInput className="border-2 border-white rounded-md p-2 text-white text-lg w-1/4 text-center my-6"
         onChangeText={setTrainid}
+        onSubmitEditing={() => { fetchTrainData(); animateTrain(); }}
         value={trainid}
         placeholder='123'
+        placeholderTextColor={'#fff'}
         keyboardType='numeric'
       />
       <TouchableOpacity className="border border-green-800 px-6 py-2 bg-green-900 rounded-3xl"
@@ -86,6 +90,7 @@ return (
       >
         <Text className="text-white text-xl">Search</Text>
       </TouchableOpacity>
+      </BlurView>
     </View>
     <Animated.Image className="absolute scale-50 z-10 -left-[382] top-[350]"
       source={require('./assets/train.png')}
@@ -95,13 +100,13 @@ return (
       {animationDone ?
         trainStops.map((stop, index) => {
           return (
-            <View className="flex items-center my-3 border-b-2 border-b-green-400" key={index}>
+            <BlurView intensity={50} tint="dark" className="flex items-center my-3 border-b-2 border-b-green-600" key={index}>
               <Text className="text-white text-2xl basis-2/5 mb-2">{stopCodes[stop[0]]}</Text>
               <View className="flex flex-row">
                 <Text className="text-white text-xl flex">{stop[2]}</Text>
                 <Text className="text-white text-xl basis-2/5 text-right">{stop[1]}</Text>
               </View>
-            </View>
+            </BlurView>
           )
         }
         ) : null
