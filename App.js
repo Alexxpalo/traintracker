@@ -53,7 +53,6 @@ export default function App() {
     });
   };
 
-
   const fetchTrainData = async () => {
     translation.setValue(0);
     fadeinAnim.setValue(0);
@@ -63,20 +62,18 @@ export default function App() {
     try {
       const response = await fetch(`https://rata.digitraffic.fi/api/v1/trains/latest/${trainid}`);
       const json = await response.json();
-      json[0].timeTableRows.filter((row) => {
+      const stops = {};
+      json[0].timeTableRows.forEach((row) => {
         if (row.liveEstimateTime > currentTimeUTC && row.commercialStop === true) {
           const timeString = new Date(row.liveEstimateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          if(trainStops.some(stop => stop.name === row.stationShortCode)) {
-            const index = trainStops.findIndex(stop => stop.name === row.stationShortCode);
-            trainStops[index][row.type] = timeString;
-            setTrainStops([...trainStops]);
-            console.log(index);
-          } else {
-          setTrainStops((trainStops) => [...trainStops, { name: row.stationShortCode, [row.type]: timeString } ]);
+          if (!stops[row.stationShortCode]) {
+            stops[row.stationShortCode] = {};
           }
+          stops[row.stationShortCode][row.type] = timeString;
         }
       });
- 
+      const trainStops = Object.keys(stops).map((key) => ({ name: key, ...stops[key] }));
+      setTrainStops(trainStops);
       console.log(trainStops);
     } catch (error) {
       console.error(error);
@@ -84,52 +81,51 @@ export default function App() {
     }
   };
 
-
-return (
-  <View className="flex-1 bg-green-700">
-    <Image className="absolute z-0 w-full h-full"
-      source={require('./assets/background.png')}
-    />
-    <View className="flex-1 justify-center">
-      <BlurView tint="dark" intensity={75} className="border-y-4 border-green-600 w-full flex items-center py-6">
-      <Text className="text-white text-xl">Enter train number</Text>
-      <TextInput className="border-2 border-white rounded-md p-2 text-white text-lg w-1/4 text-center my-6"
-        onChangeText={setTrainid}
-        onSubmitEditing={() => { fetchTrainData(); animateTrain(); }}
-        value={trainid}
-        placeholder='123'
-        placeholderTextColor={'#fff'}
-        keyboardType='numeric'
+  return (
+    <View className="flex-1 bg-green-700">
+      <Image className="absolute z-0 w-full h-full"
+        source={require('./assets/background.png')}
       />
-      <TouchableOpacity className="border border-green-800 px-6 py-2 bg-green-900 rounded-3xl"
-        onPress={() => { fetchTrainData(); animateTrain(); }}
+      <View className="flex-1 justify-center">
+        <BlurView tint="dark" intensity={75} className="border-y-4 border-green-600 w-full flex items-center py-6">
+          <Text className="text-white text-xl">Enter train number</Text>
+          <TextInput className="border-2 border-white rounded-md p-2 text-white text-lg w-1/4 text-center my-6"
+            onChangeText={setTrainid}
+            onSubmitEditing={() => { fetchTrainData(); animateTrain(); }}
+            value={trainid}
+            placeholder='123'
+            placeholderTextColor={'#fff'}
+            keyboardType='numeric'
+          />
+          <TouchableOpacity className="border border-green-800 px-6 py-2 bg-green-900 rounded-3xl"
+            onPress={() => { fetchTrainData(); animateTrain(); }}
+          >
+            <Text className="text-white text-xl">Search</Text>
+          </TouchableOpacity>
+        </BlurView>
+      </View>
+      <Animated.Image className="absolute scale-50 z-10 -left-[382] top-[350]"
+        source={require('./assets/train.png')}
+        style={{ transform: [{ translateX: translation }] }}
+      />
+      <Animated.ScrollView className="flex-1 px-10"
+        style={{ opacity: fadeinAnim }}
       >
-        <Text className="text-white text-xl">Search</Text>
-      </TouchableOpacity>
-      </BlurView>
-    </View>
-    <Animated.Image className="absolute scale-50 z-10 -left-[382] top-[350]"
-      source={require('./assets/train.png')}
-      style={{ transform: [{ translateX: translation }] }}
-    />
-    <Animated.ScrollView className="flex-1 px-10"
-    style={{ opacity: fadeinAnim }}
-    >
-      {animationDone ?
-        trainStops.map((stop, index) => {
-          return (
-            <BlurView intensity={50} tint="dark" className="flex items-center my-3 border-b-2 border-b-green-600" key={index}>
-              <Text className="text-white text-2xl basis-2/5 mb-2">{stopCodes[stop.name]}</Text>
-              <View className="flex flex-row">
-                <Text className="text-white text-xl flex">{stop.ARRIVAL}</Text>
-                <Text className="text-white text-xl basis-2/5 text-right">{stop.DEPARTURE}</Text>
-              </View>
-            </BlurView>
-          )
+        {animationDone ?
+          trainStops.map((stop, index) => {
+            return (
+              <BlurView intensity={50} tint="dark" className="flex items-center my-3 border-b-2 border-b-green-600" key={index}>
+                <Text className="text-white text-2xl basis-2/5 mb-2">{stopCodes[stop.name]}</Text>
+                <View className="flex flex-row">
+                  <Text className="text-white text-xl flex">Arr {stop.ARRIVAL}</Text>
+                  <Text className="text-white text-xl basis-2/5 text-right">Dep {stop.DEPARTURE}</Text>
+                </View>
+              </BlurView>
+            )
+          }
+          ) : null
         }
-        ) : null
-      }
-    </Animated.ScrollView>
-  </View>
-);
+      </Animated.ScrollView>
+    </View>
+  );
 }
