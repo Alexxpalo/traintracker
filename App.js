@@ -7,6 +7,7 @@ export default function App() {
   const [trainStops, setTrainStops] = useState([]);
   const [stopCodes, setStopCodes] = useState({});
   const translation = useRef(new Animated.Value(0)).current;
+  const fadeinAnim = useRef(new Animated.Value(0)).current;
   const [animationDone, setAnimationDone] = useState(false);
 
   useEffect(() => {
@@ -24,14 +25,22 @@ export default function App() {
         console.log('Stations fetched');
       } catch (error) {
         console.error(error);
+        Alert.alert("Error", "Cannot find station data");
       }
     };
 
     fetchStations();
   }, []);
 
+  const fadeinAnimation = () => {
+    Animated.timing(fadeinAnim, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
+  };
+
   const animateTrain = () => {
-    setAnimationDone(false);
     const screenWidth = Dimensions.get('screen').width;
     Animated.timing(translation, {
       toValue: screenWidth + 382,
@@ -40,12 +49,14 @@ export default function App() {
     }).start(() => {
       setAnimationDone(true);
       console.log(animationDone);
+      fadeinAnimation();
     });
   };
 
 
   const fetchTrainData = async () => {
     translation.setValue(0);
+    fadeinAnim.setValue(0);
     setTrainStops([]);
     const currentTimeUTC = new Date().toISOString();
 
@@ -55,7 +66,7 @@ export default function App() {
       json[0].timeTableRows.filter((row) => {
         if (row.liveEstimateTime > currentTimeUTC && row.commercialStop === true) {
           const timeString = new Date(row.liveEstimateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          setTrainStops((trainStops) => [...trainStops, [row.stationShortCode, row.type, timeString]]);
+          setTrainStops((trainStops) => [...trainStops, [ row.stationShortCode, row.type, timeString ]]);
         }
       });
       console.log(trainStops);
@@ -93,7 +104,9 @@ return (
       source={require('./assets/train.png')}
       style={{ transform: [{ translateX: translation }] }}
     />
-    <ScrollView className="flex-1 px-10">
+    <Animated.ScrollView className="flex-1 px-10"
+    style={{ opacity: fadeinAnim }}
+    >
       {animationDone ?
         trainStops.map((stop, index) => {
           return (
@@ -108,7 +121,7 @@ return (
         }
         ) : null
       }
-    </ScrollView>
+    </Animated.ScrollView>
   </View>
 );
 }
